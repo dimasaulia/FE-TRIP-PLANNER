@@ -1,0 +1,89 @@
+/* Surface recipes built only from theme.css variables. */
+
+/* Sticky note: 170deg gradient, 1px top highlight, shadow tinted by its own hue. */
+.note {
+  --note-hue: var(--note-neutral-hue);
+  --note-scale: 1;
+  color: var(--note-ink);
+  background: linear-gradient(
+    170deg,
+    oklch(var(--note-top-l) calc(var(--note-top-c) * var(--note-scale)) var(--note-hue)),
+    oklch(var(--note-mid-l) calc(var(--note-mid-c) * var(--note-scale)) var(--note-hue)) 55%,
+    oklch(var(--note-bottom-l) calc(var(--note-bottom-c) * var(--note-scale)) var(--note-hue))
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    0 1px 2px oklch(0.35 calc(0.08 * var(--note-scale)) var(--note-hue) / 0.25),
+    0 8px 18px -10px oklch(0.35 calc(0.12 * var(--note-scale)) var(--note-hue) / 0.45);
+}
+
+.note-neutral {
+  --note-hue: var(--note-neutral-hue);
+  --note-scale: var(--note-neutral-scale);
+}
+
+.note-lifted,
+[data-dragging] > .note {
+  transform: rotate(-1.6deg) scale(1.02) !important;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    0 4px 8px oklch(0.35 calc(0.08 * var(--note-scale)) var(--note-hue) / 0.25),
+    0 22px 36px -14px oklch(0.35 calc(0.14 * var(--note-scale)) var(--note-hue) / 0.55);
+}
+
+/* A solid swatch of the same hue: day dots, chips, avatars. */
+.note-dot {
+  --note-hue: var(--note-neutral-hue);
+  --note-scale: 1;
+  background: oklch(var(--note-mid-l) calc(var(--note-mid-c) * var(--note-scale)) var(--note-hue));
+}
+
+.note-chip {
+  --note-hue: var(--note-neutral-hue);
+  --note-scale: 1;
+  color: var(--note-ink);
+  background: oklch(var(--note-top-l) calc(var(--note-top-c) * var(--note-scale)) var(--note-hue));
+}
+
+.half-hour-line {
+  background-image: linear-gradient(to right, var(--line) 50%, transparent 50%);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+  .note,
+  .note-lifted,
+  [data-dragging] > .note {
+    transform: none !important;
+  }
+}
+
+/* Banner behind a note: full width, faded with the note colour so text stays readable. */
+.note-banner-fade {
+  background: linear-gradient(
+    100deg,
+    oklch(var(--note-mid-l) calc(var(--note-mid-c) * var(--note-scale)) var(--note-hue) / 0.85) 0%,
+    oklch(var(--note-mid-l) calc(var(--note-mid-c) * var(--note-scale)) var(--note-hue) / 0.45) 45%,
+    oklch(var(--note-mid-l) calc(var(--note-mid-c) * var(--note-scale)) var(--note-hue) / 0) 100%
+  );
+}
+
+/* Dragged over the trash zone. */
+[data-over-trash] > .note {
+  opacity: 0.45;
+  outline: 2px dashed var(--danger);
+  outline-offset: 2px;
+}
+
+.trash-zone[data-over] {
+  background: var(--danger);
+  color: var(--surface);
+  transform: scale(1.06);
+}

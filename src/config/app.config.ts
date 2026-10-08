@@ -1,6 +1,8 @@
 export const appConfig = {
-  name: "OpenSuite",
-  description: "Enterprise frontend boilerplate for OpenSuite ecosystem apps.",
+  name: "Trip Planner",
+  description: "Susun jadwal liburan bersama, dari library destinasi sampai timeline harian.",
   activeAuthPage: "LoginV1",
   activeDashboardPage: "DashboardHomeV1",
+  sessionCookieNames: ["session", "__Host-session"],
+  lastTripStorageKey: "tp:last-trip",
 } as const;

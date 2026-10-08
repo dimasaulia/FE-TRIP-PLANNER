@@ -1,20 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { appConfig } from "@/config/app.config";
 import { routes } from "@/config/routes.config";
 
-const protectedRoutes = [routes.dashboard, routes.users];
-
+// Lightweight guard: without a session cookie a protected page redirects to
+// login straight away. The protected layout still validates the session and
+// reads `x-next-path` to come back here after login.
 export function proxy(request: NextRequest) {
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
-  );
+  const path = request.nextUrl.pathname + request.nextUrl.search;
+  const hasSession = appConfig.sessionCookieNames.some((name) => request.cookies.has(name));
 
-  if (!isProtectedRoute) {
-    return NextResponse.next();
+  if (!hasSession) {
+    const login = new URL(routes.login, request.url);
+    login.searchParams.set("next", path);
+    return NextResponse.redirect(login);
   }
 
-  return NextResponse.next();
+  const headers = new Headers(request.headers);
+  headers.set("x-next-path", path);
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/users/:path*"],
+  matcher: ["/trips/:path*"],
 };

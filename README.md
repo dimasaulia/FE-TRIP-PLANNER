@@ -1,57 +1,50 @@
-# OpenSuite Next.js Boilerplate
+# Trip Planner Frontend
 
-Reusable frontend foundation for OpenSuite ecosystem apps. The goal is to keep routing thin, features isolated, authorization SDK-ready, and page versions easy to replace or roll back.
+Next.js (App Router, TypeScript strict) frontend for the collaborative trip timeline planner, implementing the TRD "Frontend – Trip Timeline Planner" on top of the OpenSuite boilerplate. Read `AGENTS.md` for the architecture rules (routing-only `src/app`, versioned feature pages, hooks → services → `modules/http`).
 
-## Getting Started
+## Run
 
 ```bash
-npm run dev
+cp .env.example .env.local      # BACKEND_URL, NEXT_PUBLIC_WS_URL, NEXT_PUBLIC_DEV_LOGIN_ENABLED
+npm install
+npm run dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+The backend must allow this origin and redirect back to it: in `BE/.env` set `APP_BASE_URL=http://localhost:3000` and add `http://localhost:3000` to `ALLOWED_ORIGINS`. `/api/*` is rewritten to `BACKEND_URL` (same origin, so the session cookie travels); the WebSocket cannot pass through rewrites and uses `NEXT_PUBLIC_WS_URL` directly.
 
-Useful checks:
+Checks:
 
 ```bash
 npm run lint
+npm run test        # vitest: time/DST, gaps, realtime cache patches, markdown guard, token contrast, i18n keys
 npm run build
+npm run tokens      # regenerate src/styles/theme.css after editing src/styles/tokens.ts
 ```
 
-## Demo Routes
+## Routes
 
-- `/` redirects to `/dashboard`
-- `/login` renders `LoginV1`
-- `/dashboard` renders `DashboardHomeV1`
-- `/users` renders `UserListV1`
+| Route | Page |
+| --- | --- |
+| `/login` | `LoginV1` – Google sign-in (+ dev login when enabled) |
+| `/join/[token]` | `JoinV1` – invite preview and join |
+| `/trips` | `TripListV1` – trips, create trip with banner; one trip opens directly (`?all=1` shows the list) |
+| `/trips/[tripId]` | `TripWorkspaceV1` – day strip, timeline and library side by side (`?day`, `?item`, `?view` on phones) |
+| `/trips/[tripId]/settings` | `TripSettingsV1` – details, members, invites, Google Calendar |
+| `/dev/tokens` | `TokensV1` – token guideline rendered from `tokens.ts` (dev only) |
 
-## Core Rule
+## Where things live
 
-`src/app/` is only for route mapping and layout binding. Business logic, form logic, API calls, and large UI components belong in `features/`, `modules/`, `shared/`, or `layouts/`.
+| Path | Purpose |
+| --- | --- |
+| `src/styles/tokens.ts` | Only source of colours, fonts, radii, timeline geometry (`theme.css` is generated) |
+| `src/modules/http` | API client: envelope, `ApiError`, UTC ↔ `Date`, `X-Client-Id`, central error handling (`QueryProvider`) |
+| `src/modules/realtime` | One WebSocket per open trip with jittered reconnect and seq-gap resync |
+| `src/modules/auth` | Session (server guard + `['me']`), trip-role permissions (`TripCan`, `useTripPermission`) |
+| `src/modules/preferences` | Language (`id` default, `en`) and theme (light/dark/system) |
+| `src/shared/time` | Trip-timezone math: `dayBounds`, `minutesOfDay`, `snap`, `formatTime`, DST-safe |
+| `src/features/library` | Library list, item page, Tiptap editor with `/` menu and Markdown mode, category colours |
+| `src/features/schedule` | Day strip, timeline, drag/resize, no-overlap placement, optimistic updates, drag previews |
+| `src/features/trips` | Trip list/workspace/settings pages, realtime cache sync |
+| `src/features/invites`, `calendar`, `uploads`, `presence` | Invites and join page, Calendar sync, image upload behind the scenes, presence |
 
-Example:
-
-```tsx
-// src/app/(auth)/login/page.tsx
-import { LoginV1 } from "@/features/auth/pages/LoginV1";
-
-export default function LoginPage() {
-  return <LoginV1 />;
-}
-```
-
-## Structure
-
-```txt
-src/
-├── app/
-├── config/
-├── features/
-├── layouts/
-├── modules/
-├── shared/
-├── styles/
-├── types/
-└── proxy.ts
-```
-
-Read `AGENTS.md` before extending the boilerplate. It is the source of truth for architecture rules, feature structure, page versioning, authorization boundaries, naming conventions, and implementation workflow.
+The boilerplate demo pages (`/dashboard`, `/users`, `DashboardLayout`, demo access snapshot) are still in the tree and can be removed.

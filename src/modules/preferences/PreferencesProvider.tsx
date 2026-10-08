@@ -8,20 +8,26 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import {
-  dictionaries,
-  type Language,
-  type TranslationKey,
-} from "./dictionaries";
+import { setApiLanguageProvider } from "@/modules/http/api-client";
+import { type Language, type TranslationKey } from "./dictionaries";
+import { THEME_STORAGE_KEY, type ThemePreference } from "./theme-script";
+import { DEFAULT_LANGUAGE, translate, type TranslateVars } from "./translate";
+
 
 type PreferencesContextValue = {
   language: Language;
+  /** BCP 47 locale for Intl formatting. */
+  locale: string;
   setLanguage: (language: Language) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, vars?: TranslateVars) => string;
+  theme: ThemePreference;
+  /** The theme actually shown (system resolved through prefers-color-scheme). */
+  resolvedTheme: "light" | "dark";
+  setTheme: (theme: ThemePreference) => void;
 };
 
-const DEFAULT_LANGUAGE: Language = "en";
 const LANGUAGE_STORAGE_KEY = "opensuite.language";
+const locales: Record<Language, string> = { id: "id-ID", en: "en-GB" };
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
 const listeners = new Set<() => void>();
@@ -34,21 +40,45 @@ function isLanguage(value: string | null): value is Language {
   return value === "en" || value === "id";
 }
 
+function isTheme(value: string | null): value is ThemePreference {
+  return value === "light" || value === "dark" || value === "system";
+}
+
+function readStorage(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // private mode: keep the in-memory choice only
+  }
+}
+
 function getStoredLanguage() {
   if (typeof window === "undefined") {
     return DEFAULT_LANGUAGE;
   }
-
-  const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-
+  const storedLanguage = readStorage(LANGUAGE_STORAGE_KEY);
   return isLanguage(storedLanguage) ? storedLanguage : DEFAULT_LANGUAGE;
+}
+
+function getStoredTheme(): ThemePreference {
+  if (typeof window === "undefined") return "system";
+  const stored = readStorage(THEME_STORAGE_KEY);
+  return isTheme(stored) ? stored : "system";
 }
 
 function subscribeToPreferences(listener: () => void) {
   listeners.add(listener);
 
   function handleStorageEvent(event: StorageEvent) {
-    if (event.key === LANGUAGE_STORAGE_KEY) {
+    if (event.key === LANGUAGE_STORAGE_KEY || event.key === THEME_STORAGE_KEY) {
       listener();
     }
   }
@@ -61,6 +91,21 @@ function subscribeToPreferences(listener: () => void) {
   };
 }
 
+const DARK_QUERY = "(prefers-color-scheme: dark)";
+
+function subscribeToSystemTheme(listener: () => void) {
+  const media = window.matchMedia(DARK_QUERY);
+  media.addEventListener("change", listener);
+  return () => media.removeEventListener("change", listener);
+}
+
+function applyTheme(theme: ThemePreference) {
+  const dark =
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+
 type PreferencesProviderProps = {
   children: React.ReactNode;
 };
@@ -71,21 +116,41 @@ export function PreferencesProvider({ children }: PreferencesProviderProps) {
     getStoredLanguage,
     () => DEFAULT_LANGUAGE,
   );
+  const theme = useSyncExternalStore(subscribeToPreferences, getStoredTheme, () => "system" as const);
+  const systemDark = useSyncExternalStore(subscribeToSystemTheme, () => window.matchMedia(DARK_QUERY).matches, () => false);
+  const resolvedTheme = theme === "dark" || (theme === "system" && systemDark) ? "dark" : "light";
 
   useEffect(() => {
     document.documentElement.lang = language;
+    setApiLanguageProvider(() => language);
   }, [language]);
+
+  useEffect(() => {
+    applyTheme(theme);
+    if (theme !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyTheme("system");
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [theme]);
 
   const value = useMemo<PreferencesContextValue>(
     () => ({
       language,
+      locale: locales[language],
       setLanguage: (nextLanguage) => {
-        window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+        writeStorage(LANGUAGE_STORAGE_KEY, nextLanguage);
         emitPreferenceChange();
       },
-      t: (key) => dictionaries[language][key],
+      t: (key, vars) => translate(language, key, vars),
+      theme,
+      resolvedTheme,
+      setTheme: (nextTheme) => {
+        writeStorage(THEME_STORAGE_KEY, nextTheme);
+        emitPreferenceChange();
+      },
     }),
-    [language],
+    [language, resolvedTheme, theme],
   );
 
   return (
@@ -103,4 +168,14 @@ export function usePreferences() {
   }
 
   return context;
+}
+
+/**
+ * Overrides theme variables at runtime without a rebuild, e.g.
+ * `applyThemeOverrides({ "--accent-hue": "20" })`.
+ */
+export function applyThemeOverrides(overrides: Record<`--${string}`, string>) {
+  for (const [name, value] of Object.entries(overrides)) {
+    document.documentElement.style.setProperty(name, value);
+  }
 }

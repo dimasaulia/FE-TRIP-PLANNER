@@ -16,7 +16,7 @@ export function LoginFormSection() {
         </label>
       ))}
       <button
-        className="h-11 w-full rounded-md bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:bg-[#1f5f54]"
+        className="h-11 w-full rounded-md bg-accent px-4 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
         type="button"
       >
         Sign in

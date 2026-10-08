@@ -1,35 +1,118 @@
 @import "tailwindcss";
+@import "../styles/theme.css";
+@import "../styles/recipes.css";
 
-:root {
-  --background: #f6f4ee;
-  --foreground: #161513;
-  --muted: #6c665d;
-  --line: #ded8cd;
-  --panel: #fffdf8;
-  --accent: #256f61;
-  --accent-foreground: #ffffff;
-  --warning: #c56b32;
-}
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* Aliases for the boilerplate demo pages. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-line: var(--line);
-  --color-panel: var(--panel);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-warning: var(--warning);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--page);
+  --color-foreground: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-panel: var(--surface);
+  --color-accent-foreground: var(--on-accent);
+  --color-warning: var(--danger);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Rich text inside the library editor and read-only previews. */
+.prose-trip {
+  line-height: 1.6;
+}
+.prose-trip > * + * {
+  margin-top: 0.6em;
+}
+.prose-trip h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.prose-trip h2 {
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+.prose-trip h3 {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+.prose-trip ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.prose-trip ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.prose-trip ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.prose-trip ul[data-type="taskList"] li {
+  display: flex;
+  gap: 0.5em;
+  align-items: flex-start;
+}
+.prose-trip ul[data-type="taskList"] li > label {
+  margin-top: 0.2em;
+}
+.prose-trip ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+.prose-trip blockquote {
+  border-left: 3px solid var(--line-strong);
+  padding-left: 0.9em;
+  color: var(--ink-muted);
+}
+.prose-trip pre {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--sunken);
+  border-radius: var(--rad-input);
+  padding: 0.8em 1em;
+  overflow-x: auto;
+}
+.prose-trip code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+.prose-trip a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.prose-trip hr {
+  border: none;
+  border-top: 1px solid var(--line-strong);
+}
+.prose-trip img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--rad-input);
+}
+.prose-trip img[data-uploading="true"] {
+  opacity: 0.5;
+}
+.prose-trip p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--ink-muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.ProseMirror {
+  outline: none;
+  min-height: 8rem;
 }
