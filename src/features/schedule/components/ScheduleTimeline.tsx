@@ -1,7 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useCategoryColors } from "@/features/library/hooks/useCategoryColors";
 import { useLibrary } from "@/features/library/hooks/useLibrary";
 import { useCreateBlock, useDeleteBlock, useSchedule, useUpdateBlock } from "@/features/schedule/hooks/useSchedule";
@@ -89,6 +89,20 @@ export const ScheduleTimeline = forwardRef<TimelineHandle, ScheduleTimelineProps
   );
 
   const range = layout.range;
+
+  // When a day opens (once its blocks are loaded), scroll to its first block,
+  // or to 06:00 on an empty day. Later edits never move the scroll position.
+  const scrolledDay = useRef<string | null>(null);
+  useEffect(() => {
+    if (isPending || scrolledDay.current === dayKey) return;
+    const column = columnRef.current;
+    const scroller = column?.closest<HTMLElement>("[data-timeline-scroll]");
+    if (!column || !scroller) return;
+    scrolledDay.current = dayKey;
+    const columnTop = column.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const lead = 20; // keep the hour label above the first block visible
+    scroller.scrollTo({ top: Math.max(0, columnTop + (layout.scrollTo - range.start) * PX_PER_MINUTE - lead) });
+  }, [dayKey, isPending, layout.scrollTo, range.start]);
   const height = (range.end - range.start) * PX_PER_MINUTE;
   const fmt = (minutes: number) => formatTime(atMinutes(dayKey, tz, minutes), tz, locale);
   const formatRange = (start: number, end: number) => `${fmt(start)}–${fmt(end)}`;
@@ -271,7 +285,10 @@ export const ScheduleTimeline = forwardRef<TimelineHandle, ScheduleTimelineProps
           ) : null}
 
           {!isPending && layout.blocks.length === 0 && !ghost && !draft ? (
-            <div className="pointer-events-none absolute inset-x-6 top-24 rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-muted">
+            <div
+              className="pointer-events-none absolute inset-x-6 rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-sm text-ink-muted"
+              style={{ top: topOf(layout.scrollTo) + 2 * hourHeight }}
+            >
               {editable ? t("schedule.emptyEditor") : t("schedule.emptyViewer")}
             </div>
           ) : null}

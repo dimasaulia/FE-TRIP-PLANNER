@@ -9,13 +9,15 @@ export type DayLayout = {
   blocks: ScheduleBlock[];
   /** Every block touching this day, as minutes since its start (for overlap checks). */
   occupied: Array<Interval & { id: string }>;
-  /** Visible column: 06:00–24:00, widened for blocks outside it. */
+  /** Visible column: the whole day from 00:00, widened past 24:00 for late blocks. */
   range: Interval;
+  /** Minute to scroll to when the day opens: the first block, else 06:00. */
+  scrollTo: number;
   /** Where blocks may go: the visible range clipped to the trip dates. */
   bounds: Interval;
 };
 
-const { startHour, endHour } = tokens.timeline;
+const { scrollToHour, endHour } = tokens.timeline;
 
 export function buildDayLayout(
   allBlocks: ScheduleBlock[],
@@ -39,14 +41,12 @@ export function buildDayLayout(
       end: minutesOfDay(block.end_at, dayKey, timeZone),
     }));
 
-  let rangeStart = startHour * 60;
+  const rangeStart = 0;
   let rangeEnd = Math.max(endHour * 60, dayLength);
   for (const block of blocks) {
-    const blockStart = minutesOfDay(block.start_at, dayKey, timeZone);
-    const blockEnd = minutesOfDay(block.end_at, dayKey, timeZone);
-    rangeStart = Math.min(rangeStart, Math.floor(blockStart / 60) * 60);
-    rangeEnd = Math.max(rangeEnd, Math.ceil(blockEnd / 60) * 60);
+    rangeEnd = Math.max(rangeEnd, Math.ceil(minutesOfDay(block.end_at, dayKey, timeZone) / 60) * 60);
   }
+  const scrollTo = blocks.length ? minutesOfDay(blocks[0].start_at, dayKey, timeZone) : scrollToHour * 60;
 
   const trip = tripRange(tripStart, tripEnd, timeZone);
   const tripStartMin = (trip.start.getTime() - start.getTime()) / 60_000;
@@ -57,6 +57,7 @@ export function buildDayLayout(
     blocks,
     occupied,
     range: { start: rangeStart, end: rangeEnd },
+    scrollTo,
     bounds: { start: Math.max(rangeStart, tripStartMin), end: Math.min(rangeEnd, tripEndMin) },
   };
 }

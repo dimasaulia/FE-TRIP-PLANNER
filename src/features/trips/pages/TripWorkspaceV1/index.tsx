@@ -111,7 +111,7 @@ export function TripWorkspaceV1() {
           <div className="border-b border-line px-4 py-3 sm:px-6">
             <DayStrip onSelect={url.setDay} selected={url.day} />
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24 pt-5 sm:px-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24 pt-5 sm:px-6" data-timeline-scroll>
             <ScheduleTimeline dayKey={url.day} onDayChange={url.setDay} onOpenItem={url.openItem} ref={timeline} />
           </div>
         </section>

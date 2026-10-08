@@ -51,7 +51,7 @@ export const tokens = {
   font: { sans: "Bricolage Grotesque", mono: "JetBrains Mono" },
   radius: { input: 12, note: 16, chip: 18, card: 22, panel: 26, section: 32, pill: 999 },
   space: { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32 },
-  timeline: { startHour: 6, endHour: 24, hourHeight: 66, snapMinutes: 15, minBlockMinutes: 15, gutterWidth: 60 },
+  timeline: { scrollToHour: 6, endHour: 24, hourHeight: 66, snapMinutes: 15, minBlockMinutes: 15, gutterWidth: 60 },
   motion: { fast: 120, base: 200 },
 } as const;
 
