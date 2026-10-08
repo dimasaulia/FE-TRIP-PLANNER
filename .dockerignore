@@ -1,0 +1,11 @@
+.git
+node_modules
+.next
+out
+coverage
+# FE/.env is copied on purpose (build-time config, no secrets); local overrides are not.
+.env.*
+!.env.example
+.DS_Store
+Dockerfile
+*.log
